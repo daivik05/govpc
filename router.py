@@ -53,6 +53,7 @@ class Router:
             return
 
         packet.trace.append(self.name)
+        print(f"{self.name} processing packet")
 
         for ip, device in self.interfaces.items():
             if hasattr(device, 'ip') and device.ip == packet.dest_ip:
