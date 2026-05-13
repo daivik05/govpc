@@ -3,16 +3,56 @@ from flask import request
 from flask import jsonify
 
 from topology import Topology
+import json
+
+
+# ====================================
+# RESET TOPOLOGY ON START
+# ====================================
+
+default_topology = {
+
+    "routers": [],
+
+    "switches": [],
+
+    "vms": [],
+
+    "vlans": [],
+
+    "connections": []
+}
+
+with open(
+
+    "topology.json",
+
+    "w"
+) as f:
+
+    json.dump(
+
+        default_topology,
+
+        f,
+
+        indent=4
+    )
 
 app = Flask(__name__)
 
+# ====================================
+# CREATE TOPOLOGY
+# ====================================
+
 topology = Topology()
 
-# =========================
+# ====================================
 # CREATE ROUTER
-# =========================
+# ====================================
 
 @app.route("/routers", methods=["POST"])
+
 def create_router():
 
     data = request.json
@@ -20,55 +60,27 @@ def create_router():
     name = data.get("name")
 
     if not name:
+
         return jsonify({
+
             "error": "Router name required"
+
         }), 400
 
-    success = topology.add_router(name)
-
-    if not success:
-        return jsonify({
-            "error": "Router already exists"
-        }), 400
+    topology.add_router(name)
 
     return jsonify({
-        "message": f"Router {name} created"
+
+        "message":
+        f"Router {name} created"
     })
 
-# =========================
-# GET ROUTERS
-# =========================
-
-@app.route("/routers", methods=["GET"])
-def get_routers():
-
-    return jsonify(
-        list(topology.routers.keys())
-    )
-
-# =========================
-# DELETE ROUTER
-# =========================
-
-@app.route("/routers/<name>", methods=["DELETE"])
-def delete_router(name):
-
-    success = topology.delete_router(name)
-
-    if not success:
-        return jsonify({
-            "error": "Router not found"
-        }), 404
-
-    return jsonify({
-        "message": f"Router {name} deleted"
-    })
-
-# =========================
+# ====================================
 # CREATE SWITCH
-# =========================
+# ====================================
 
 @app.route("/switches", methods=["POST"])
+
 def create_switch():
 
     data = request.json
@@ -76,81 +88,242 @@ def create_switch():
     name = data.get("name")
 
     if not name:
+
         return jsonify({
+
             "error": "Switch name required"
+
         }), 400
 
-    success = topology.add_switch(name)
-
-    if not success:
-        return jsonify({
-            "error": "Switch already exists"
-        }), 400
+    topology.add_switch(name)
 
     return jsonify({
-        "message": f"Switch {name} created"
+
+        "message":
+        f"Switch {name} created"
     })
 
-# =========================
-# CONNECT ROUTERS
-# =========================
+# ====================================
+# CREATE VM
+# ====================================
+
+@app.route("/vms", methods=["POST"])
+
+def create_vm():
+
+    data = request.json
+
+    name = data.get("name")
+
+    vlan = data.get("vlan")
+
+    if not name:
+
+        return jsonify({
+
+            "error": "VM name required"
+
+        }), 400
+
+    topology.add_vm(
+
+        name,
+        vlan
+    )
+
+    return jsonify({
+
+        "message":
+        f"VM {name} created"
+    })
+
+# ====================================
+# CREATE VLAN
+# ====================================
+
+@app.route("/vlans", methods=["POST"])
+
+def create_vlan():
+
+    data = request.json
+
+    vlan_id = data.get("vlan_id")
+
+    if vlan_id is None:
+
+        return jsonify({
+
+            "error":
+            "VLAN ID required"
+
+        }), 400
+
+    topology.add_vlan(vlan_id)
+
+    return jsonify({
+
+        "message":
+        f"VLAN {vlan_id} created"
+    })
+
+# ====================================
+# CONNECT DEVICES
+# ====================================
 
 @app.route("/connect", methods=["POST"])
-def connect_routers():
+
+def connect_devices():
 
     data = request.json
 
-    r1 = data.get("router1")
-    r2 = data.get("router2")
+    device1 = data.get("device1")
 
-    success = topology.connect_routers(r1, r2)
+    device2 = data.get("device2")
 
-    if not success:
+    if not device1 or not device2:
 
         return jsonify({
-            "error": "Router missing"
+
+            "error":
+            "Both devices required"
+
+        }), 400
+
+    result = topology.connect_devices(
+
+        device1,
+        device2
+    )
+
+    if not result:
+
+        return jsonify({
+
+            "error":
+            "Connection failed"
+
         }), 400
 
     return jsonify({
-        "message": f"{r1} connected to {r2}"
+
+        "message":
+        f"{device1} connected to {device2}"
     })
 
-# =========================
-# GET ROUTE (BFS)
-# =========================
+# ====================================
+# GET FULL TOPOLOGY
+# ====================================
 
-@app.route("/route", methods=["POST"])
-def get_route():
+@app.route("/topology", methods=["GET"])
 
-    data = request.json
+def get_topology():
 
-    source = data.get("source")
-    destination = data.get("destination")
+    return jsonify(topology.data)
 
-    if source not in topology.routers:
-        return jsonify({
-            "error": "Source router missing"
-        }), 400
+# ====================================
+# DELETE ROUTER
+# ====================================
 
-    if destination not in topology.routers:
-        return jsonify({
-            "error": "Destination router missing"
-        }), 400
+@app.route("/routers/<name>", methods=["DELETE"])
 
-    path = topology.routers[source].get_path(destination)
+def delete_router(name):
 
-    if not path:
+    result = topology.delete_router(name)
+
+    if not result:
 
         return jsonify({
-            "error": "No route found"
+
+            "error":
+            "Router not found"
+
         }), 404
 
-    route = [router.name for router in path]
+    return jsonify({
+
+        "message":
+        f"Router {name} deleted"
+    })
+
+# ====================================
+# DELETE SWITCH
+# ====================================
+
+@app.route("/switches/<name>", methods=["DELETE"])
+
+def delete_switch(name):
+
+    result = topology.delete_switch(name)
+
+    if not result:
+
+        return jsonify({
+
+            "error":
+            "Switch not found"
+
+        }), 404
 
     return jsonify({
-        "route": route
+
+        "message":
+        f"Switch {name} deleted"
     })
+
+# ====================================
+# DELETE VM
+# ====================================
+
+@app.route("/vms/<name>", methods=["DELETE"])
+
+def delete_vm(name):
+
+    result = topology.delete_vm(name)
+
+    if not result:
+
+        return jsonify({
+
+            "error":
+            "VM not found"
+
+        }), 404
+
+    return jsonify({
+
+        "message":
+        f"VM {name} deleted"
+    })
+
+# ====================================
+# DELETE VLAN
+# ====================================
+
+@app.route("/vlans/<int:vlan_id>", methods=["DELETE"])
+
+def delete_vlan(vlan_id):
+
+    result = topology.delete_vlan(vlan_id)
+
+    if not result:
+
+        return jsonify({
+
+            "error":
+            "VLAN not found"
+
+        }), 404
+
+    return jsonify({
+
+        "message":
+        f"VLAN {vlan_id} deleted"
+    })
+
+# ====================================
+# RUN APP
+# ====================================
 
 if __name__ == "__main__":
 
-    app.run(debug=True)
+    app.run(debug=False, use_reloader=False)

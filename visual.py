@@ -1,5 +1,5 @@
 import tkinter as tk
-import time
+
 
 class NetworkVisualizer:
 
@@ -7,163 +7,418 @@ class NetworkVisualizer:
 
         self.root = tk.Tk()
 
-        self.root.title("Network Packet Simulator")
+        self.root.title(
+            "Enterprise Network Simulator"
+        )
+
+        self.root.geometry("1200x700")
 
         self.canvas = tk.Canvas(
+
             self.root,
-            width=1000,
-            height=600,
+
+            width=1200,
+            height=700,
+
             bg="white"
         )
 
-        self.canvas.pack()
+        self.canvas.pack(
+            fill="both",
+            expand=True
+        )
 
-        # =========================
-        # NODE POSITIONS
-        # =========================
+        self.positions = {}
 
-        self.positions = {
+    # ====================================
+    # DRAW TOPOLOGY
+    # ====================================
 
-            "VM1": (100, 100),
-            "VM3": (100, 300),
+    def draw_topology(
 
-            "S1": (250, 200),
+        self,
 
-            "R1": (400, 200),
-            "R2": (550, 200),
-            "R3": (700, 200),
-            "R4": (850, 200),
+        topology_data,
 
-            "S2": (850, 400),
+        devices
+    ):
 
-            "VM2": (700, 500),
-            "VM4": (950, 500),
-        }
+        self.canvas.delete("all")
 
-        # =========================
-        # CONNECTIONS
-        # =========================
+        self.positions.clear()
 
-        self.connections = [
+        routers = topology_data["routers"]
 
-            ("VM1", "S1"),
-            ("VM3", "S1"),
+        switches = topology_data["switches"]
 
-            ("S1", "R1"),
+        vms = topology_data["vms"]
 
-            ("R1", "R2"),
-            ("R2", "R3"),
-            ("R3", "R4"),
+        connections = topology_data["connections"]
 
-            ("R4", "S2"),
+        self.draw_routers(
+            routers,
+            devices
+        )
 
-            ("S2", "VM2"),
-            ("S2", "VM4"),
-        ]
+        self.draw_switches(
+            switches,
+            devices
+        )
 
-        self.draw_network()
+        self.draw_vms(
+            vms,
+            devices
+        )
 
-    # =========================
-    # DRAW NETWORK
-    # =========================
+        self.draw_connections(
+            connections
+        )
 
-    def draw_network(self):
+        self.root.update()
 
-        # Draw links
-        for a, b in self.connections:
+    # ====================================
+    # ROUTERS
+    # ====================================
 
-            x1, y1 = self.positions[a]
-            x2, y2 = self.positions[b]
+    def draw_routers(
 
-            self.canvas.create_line(
-                x1,
-                y1,
-                x2,
-                y2,
-                width=3
+        self,
+
+        routers,
+
+        devices
+    ):
+
+        start_x = 180
+        y = 120
+
+        spacing = 170
+
+        for i, router_name in enumerate(routers):
+
+            x = start_x + (i * spacing)
+
+            self.positions[router_name] = (
+                x,
+                y
             )
 
-        # Draw nodes
-        for node, (x, y) in self.positions.items():
+            router = devices[router_name]
 
-            color = "lightblue"
-
-            if node.startswith("R"):
-                color = "orange"
-
-            elif node.startswith("S"):
-                color = "lightgreen"
-
-            elif node.startswith("VM"):
-                color = "pink"
+            # SMALL ROUTER
 
             self.canvas.create_oval(
-                x - 30,
-                y - 30,
-                x + 30,
-                y + 30,
-                fill=color
+
+                x - 22,
+                y - 22,
+
+                x + 22,
+                y + 22,
+
+                fill="skyblue",
+
+                width=2
             )
 
             self.canvas.create_text(
+
                 x,
                 y,
-                text=node,
-                font=("Arial", 12, "bold")
+
+                text=router_name,
+
+                font=(
+                    "Arial",
+                    8,
+                    "bold"
+                )
             )
 
-    # =========================
-    # ANIMATE PACKET
-    # =========================
+            # SIDE TEXT
 
-    def animate_packet(self, path):
+            info = (
+
+                f"{router.ip}\n"
+
+                f"{router.mac}"
+            )
+
+            self.canvas.create_text(
+
+                x + 55,
+                y,
+
+                text=info,
+
+                anchor="w",
+
+                font=("Arial", 7)
+            )
+
+    # ====================================
+    # SWITCHES
+    # ====================================
+
+    def draw_switches(
+
+        self,
+
+        switches,
+
+        devices
+    ):
+
+        start_x = 250
+        y = 300
+
+        spacing = 250
+
+        for i, switch_name in enumerate(switches):
+
+            x = start_x + (i * spacing)
+
+            self.positions[switch_name] = (
+                x,
+                y
+            )
+
+            switch = devices[switch_name]
+
+            self.canvas.create_rectangle(
+
+                x - 28,
+                y - 18,
+
+                x + 28,
+                y + 18,
+
+                fill="orange",
+
+                width=2
+            )
+
+            self.canvas.create_text(
+
+                x,
+                y,
+
+                text=switch_name,
+
+                font=(
+                    "Arial",
+                    8,
+                    "bold"
+                )
+            )
+
+            info = (
+
+                f"{switch.ip}\n"
+
+                f"{switch.mac}"
+            )
+
+            self.canvas.create_text(
+
+                x + 60,
+                y,
+
+                text=info,
+
+                anchor="w",
+
+                font=("Arial", 7)
+            )
+
+    # ====================================
+    # VMS
+    # ====================================
+
+    def draw_vms(
+
+        self,
+
+        vms,
+
+        devices
+    ):
+
+        start_x = 140
+        y = 520
+
+        spacing = 190
+
+        for i, vm_data in enumerate(vms):
+
+            vm_name = vm_data["name"]
+
+            x = start_x + (i * spacing)
+
+            self.positions[vm_name] = (
+                x,
+                y
+            )
+
+            vm = devices[vm_name]
+
+            self.canvas.create_rectangle(
+
+                x - 30,
+                y - 18,
+
+                x + 30,
+                y + 18,
+
+                fill="lightgreen",
+
+                width=2
+            )
+
+            self.canvas.create_text(
+
+                x,
+                y,
+
+                text=vm_name,
+
+                font=(
+                    "Arial",
+                    8,
+                    "bold"
+                )
+            )
+
+            info = (
+
+                f"{vm.ip}\n"
+
+                f"{vm.mac}\n"
+
+                f"VLAN {vm.vlan}"
+            )
+
+            self.canvas.create_text(
+
+                x + 70,
+                y,
+
+                text=info,
+
+                anchor="w",
+
+                font=("Arial", 7)
+            )
+
+    # ====================================
+    # CONNECTIONS
+    # ====================================
+
+    def draw_connections(
+
+        self,
+
+        connections
+    ):
+
+        for conn in connections:
+
+            d1 = conn[0]
+            d2 = conn[1]
+
+            if (
+                d1 not in self.positions
+                or
+                d2 not in self.positions
+            ):
+
+                continue
+
+            x1, y1 = self.positions[d1]
+            x2, y2 = self.positions[d2]
+
+            self.canvas.create_line(
+
+                x1,
+                y1,
+
+                x2,
+                y2,
+
+                width=2
+            )
+
+    # ====================================
+    # PACKET ANIMATION
+    # ====================================
+
+    def animate_packet(
+
+        self,
+
+        path
+    ):
+
+        if len(path) < 2:
+
+            return
 
         print("\nVISUAL PATH:")
-        print(" -> ".join(path))
 
-        packet = None
+        print(" -> ".join(path))
 
         for i in range(len(path) - 1):
 
-            start = path[i]
-            end = path[i + 1]
+            node1 = path[i]
+            node2 = path[i + 1]
 
-            x1, y1 = self.positions[start]
-            x2, y2 = self.positions[end]
+            if (
+                node1 not in self.positions
+                or
+                node2 not in self.positions
+            ):
 
-            steps = 40
+                continue
+
+            x1, y1 = self.positions[node1]
+            x2, y2 = self.positions[node2]
+
+            # SMALL PACKET
+
+            packet = self.canvas.create_oval(
+
+                x1 - 5,
+                y1 - 5,
+
+                x1 + 5,
+                y1 + 5,
+
+                fill="red"
+            )
+
+            self.root.update()
+
+            steps = 30
 
             dx = (x2 - x1) / steps
             dy = (y2 - y1) / steps
 
-            # Remove previous packet
-            if packet:
-                self.canvas.delete(packet)
-
-            # Create packet
-            packet = self.canvas.create_oval(
-                x1 - 10,
-                y1 - 10,
-                x1 + 10,
-                y1 + 10,
-                fill="red"
-            )
-
-            # Animate movement
             for _ in range(steps):
 
-                self.canvas.move(packet, dx, dy)
+                self.canvas.move(
+                    packet,
+                    dx,
+                    dy
+                )
 
                 self.root.update()
 
-                time.sleep(0.03)
+                self.root.after(20)
 
-        # Keep final packet visible
-        self.root.update()
+            self.canvas.delete(packet)
 
-    # =========================
-    # RUN GUI
-    # =========================
+    # ====================================
+    # RUN
+    # ====================================
 
     def run(self):
 

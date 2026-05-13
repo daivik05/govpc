@@ -1,27 +1,66 @@
+import random
+
+
 class VM:
 
-    def __init__(self, name, ip, mac):
+    def __init__(
+
+        self,
+
+        name,
+
+        ip,
+
+        mac=None,
+
+        vlan_id=1
+    ):
 
         self.name = name
+
         self.ip = ip
-        self.mac = mac
 
-        self.router = None
-        self.switch = None
+        self.vlan = vlan_id
 
-    def connect_router(self, router):
-        self.router = router
+        # AUTO MAC
 
-    def connect_switch(self, switch):
-        self.switch = switch
+        if mac:
+
+            self.mac = mac
+
+        else:
+
+            self.mac = self.generate_mac()
+
+    # ====================================
+    # GENERATE MAC
+    # ====================================
+
+    def generate_mac(self):
+
+        return ":".join(
+
+            f"{random.randint(0,255):02x}"
+
+            for _ in range(6)
+        )
+
+    # ====================================
+    # RECEIVE PACKET
+    # ====================================
 
     def receive_packet(self, packet):
 
-        print(f"\nPacket reached {self.name}")
-        print(f"Destination IP: {self.ip}")
+        print(
 
-        print(f"Message: {packet.message}")
+            f"\n{self.name} "
 
-        full_trace = [packet.src_ip] + packet.trace + [self.ip]
+            f"received packet"
+        )
 
-        print("Trace:", " -> ".join(full_trace))
+        print(
+
+            f"Message: "
+
+            f"{packet.message}"
+        )

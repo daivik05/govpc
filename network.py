@@ -11,25 +11,29 @@ def create_network():
     vm1 = VM(
         "VM1",
         "10.0.0.2",
-        "AA:AA:AA:AA:AA:01"
+        "AA:AA:AA:AA:AA:01",
+        10
     )
 
     vm2 = VM(
         "VM2",
         "40.0.0.2",
-        "AA:AA:AA:AA:AA:02"
+        "AA:AA:AA:AA:AA:02",
+        10
     )
 
     vm3 = VM(
         "VM3",
         "20.0.0.2",
-        "AA:AA:AA:AA:AA:03"
+        "AA:AA:AA:AA:AA:03",
+        20
     )
 
     vm4 = VM(
         "VM4",
         "30.0.0.2",
-        "AA:AA:AA:AA:AA:04"
+        "AA:AA:AA:AA:AA:04",
+        20
     )
 
     # ======================
